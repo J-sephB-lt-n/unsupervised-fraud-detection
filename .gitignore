@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 
 # Large files
-data/kaggle_alaxi_paysim1.csv
+data/input/kaggle_alaxi_paysim1.csv
