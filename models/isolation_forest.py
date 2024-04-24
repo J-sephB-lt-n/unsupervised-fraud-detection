@@ -31,8 +31,8 @@ isol_forest.fit(train_X)
 train_pred = pd.DataFrame(
     {
         "tid": data.tid,
-        "is_fraud": data.is_fraud,
-        "anomaly_score": isol_forest.score_samples(train_X),
+        "model": "isolation_forest",
+        "anomaly_score": -isol_forest.score_samples(train_X),
     }
 )
 train_pred.to_csv(PRED_OUTPUT_PATH, index=False)

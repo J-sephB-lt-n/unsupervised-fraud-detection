@@ -11,8 +11,8 @@ import itertools
 import random
 from typing import Final
 
-N_PEOPLE: Final[int] = 10_000
-N_FRAUDSTERS: Final[int] = 100
+N_PEOPLE: Final[int] = 5_000
+N_FRAUDSTERS: Final[int] = 50
 N_PAYEES: Final[tuple[int, int]] = (1, 10)
 N_NON_FRAUD_TRANSACTIONS: Final[int] = 100_000
 N_FRAUD_TRANSACTIONS: Final[int] = 1_000

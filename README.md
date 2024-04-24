@@ -16,4 +16,7 @@ Run unsupervised anomaly detection models:
 $ poetry run python -m models.isolation_forest
 ```
 
-
+Evaluate models:
+```bash
+$ poetry run python -m models.evaluate
+```
