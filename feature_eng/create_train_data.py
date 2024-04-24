@@ -47,6 +47,7 @@ with duckdb.connect() as con:
     INSERT INTO fraud.train_data
     SELECT *
     FROM   read_csv('{INPUT_DATA_FILEPATH}')
+    USING  SAMPLE 100 PERCENT
     ;
     """,
     )
@@ -54,28 +55,52 @@ with duckdb.connect() as con:
         f"""
     CREATE TABLE fraud.aug_train_data
     AS 
-    SELECT      tn.*
-            ,   nt.n_transactions
-            ,   dw.n_transactions_this_day_of_week
-            ,   dw.n_transactions_this_day_of_week / nt.n_transactions AS prop_transactions_this_day_of_week
-    FROM        fraud.train_data tn
+    SELECT      trn.*
+            --,   src.n_transactions
+            --,   src.min_amt
+            --,   src.mean_amt
+            --,   src.median_amt
+            --,   src.max_amt
+            ,   amt / src.min_amt AS src_ratio_to_min_amt
+            ,   amt / src.mean_amt AS src_ratio_to_mean_amt
+            ,   amt / src.median_amt AS src_ratio_to_median_amt
+            ,   amt / src.max_amt AS src_ratio_to_max_amt
+            --,   sdw.src_n_transactions_this_day_of_week
+            ,   sdw.src_n_transactions_this_day_of_week / src.n_transactions AS prop_transactions_this_day_of_week
+            --,   stm.src_n_transactions_this_time
+            ,   stm.src_n_transactions_this_time / src.n_transactions AS prop_transactions_this_time
+    FROM        fraud.train_data trn
     LEFT JOIN   (
                 SELECT      src
                         ,   COUNT(*) AS n_transactions
+                        ,   MIN(amt) AS min_amt
+                        ,   MEDIAN(amt) AS median_amt
+                        ,   AVG(amt) as mean_amt
+                        ,   MAX(amt) AS max_amt
                 FROM        fraud.train_data
                 GROUP BY    src
-                ) nt
-            ON  tn.src = nt.src  
+                ) src
+            ON  trn.src = src.src  
     LEFT JOIN   (
                 SELECT      src
                         ,   day_of_week
-                        ,   COUNT(*) AS n_transactions_this_day_of_week
+                        ,   COUNT(*) AS src_n_transactions_this_day_of_week
                 FROM        fraud.train_data
                 GROUP BY    src
                         ,   day_of_week
-                ) dw
-            ON  tn.src = dw.src
-            AND tn.day_of_week = dw.day_of_week
+                ) sdw
+            ON  trn.src = sdw.src
+            AND trn.day_of_week = sdw.day_of_week
+    LEFT JOIN   (
+                SELECT      src
+                        ,   time
+                        ,   COUNT(*) AS src_n_transactions_this_time
+                FROM        fraud.train_data
+                GROUP BY    src
+                        ,   time
+                ) stm
+            ON  trn.src = stm.src
+            AND trn.time = stm.time
     ;
     """
     )
