@@ -54,19 +54,30 @@ with duckdb.connect() as con:
     CREATE TABLE fraud.aug_train_data
     AS 
     SELECT      trn.*
-            --,   src.n_transactions
-            --,   src.min_amt
-            --,   src.mean_amt
-            --,   src.median_amt
-            --,   src.max_amt
-            ,   amt / src.min_amt AS src_ratio_to_min_amt
-            ,   amt / src.mean_amt AS src_ratio_to_mean_amt
-            ,   amt / src.median_amt AS src_ratio_to_median_amt
-            ,   amt / src.max_amt AS src_ratio_to_max_amt
-            --,   sdw.src_n_transactions_this_day_of_week
-            ,   sdw.src_n_transactions_this_day_of_week / src.n_transactions AS prop_transactions_this_day_of_week
-            --,   stm.src_n_transactions_this_time
-            ,   stm.src_n_transactions_this_time / src.n_transactions AS prop_transactions_this_time
+            ,   src.n_transactions AS src_n_transactions
+            ,   src.min_amt AS src_min_amt
+            ,   src.mean_amt AS src_mean_amt
+            ,   src.median_amt AS src_median_amt
+            ,   src.max_amt AS src_max_amt
+            ,   trn.amt / src.min_amt AS src_ratio_to_min_amt
+            ,   trn.amt / src.mean_amt AS src_ratio_to_mean_amt
+            ,   trn.amt / src.median_amt AS src_ratio_to_median_amt
+            ,   trn.amt / src.max_amt AS src_ratio_to_max_amt
+            ,   dst.n_transactions AS dst_n_transactions
+            ,   dst.min_amt AS dst_min_amt
+            ,   dst.mean_amt AS dst_mean_amt
+            ,   dst.median_amt AS dst_median_amt
+            ,   dst.max_amt AS dst_max_amt
+            ,   trn.amt / dst.min_amt AS dst_ratio_to_min_amt
+            ,   trn.amt / dst.mean_amt AS dst_ratio_to_mean_amt
+            ,   trn.amt / dst.median_amt AS dst_ratio_to_median_amt
+            ,   trn.amt / dst.max_amt AS dst_ratio_to_max_amt
+            ,   sdw.src_n_transactions_this_day_of_week
+            ,   sdw.src_n_transactions_this_day_of_week / src.n_transactions AS src_prop_transactions_this_day_of_week
+            ,   stm.src_n_transactions_this_time
+            ,   stm.src_n_transactions_this_time / src.n_transactions AS src_prop_transactions_this_time
+            ,   sdt.src_n_transactions_this_dst
+            ,   sdt.src_n_transactions_this_dst / src.n_transactions AS src_prop_transactions_this_dst
     FROM        fraud.train_data trn
     LEFT JOIN   (
                 SELECT      src
@@ -79,6 +90,17 @@ with duckdb.connect() as con:
                 GROUP BY    src
                 ) src
             ON  trn.src = src.src  
+    LEFT JOIN   (
+                SELECT      dst
+                        ,   COUNT(*) AS n_transactions
+                        ,   MIN(amt) AS min_amt
+                        ,   MEDIAN(amt) AS median_amt
+                        ,   AVG(amt) as mean_amt
+                        ,   MAX(amt) AS max_amt
+                FROM        fraud.train_data
+                GROUP BY    dst
+                ) dst
+            ON  trn.dst = dst.dst  
     LEFT JOIN   (
                 SELECT      src
                         ,   day_of_week
@@ -99,6 +121,16 @@ with duckdb.connect() as con:
                 ) stm
             ON  trn.src = stm.src
             AND trn.time = stm.time
+    LEFT JOIN   (
+                SELECT      src
+                        ,   dst
+                        ,   COUNT(*) AS src_n_transactions_this_dst
+                FROM        fraud.train_data
+                GROUP BY    src
+                        ,   dst
+                ) sdt
+            ON  trn.src = sdt.src
+            AND trn.dst = sdt.dst
     ;
     """
     )

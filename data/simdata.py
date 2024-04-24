@@ -15,14 +15,11 @@ N_PEOPLE: Final[int] = 5_000
 N_FRAUDSTERS: Final[int] = 50
 N_PAYEES: Final[tuple[int, int]] = (1, 10)
 N_NON_FRAUD_TRANSACTIONS: Final[int] = 100_000
-N_FRAUD_TRANSACTIONS: Final[int] = 1_000
+N_FRAUD_TRANSACTIONS: Final[int] = 500
 SIM_DATA_OUTPUT_PATH: Final[str] = "data/input/simdata.csv"
 
 FRAUDSTER_IND: Final[set[int]] = set(random.sample(range(N_PEOPLE), k=N_FRAUDSTERS))
 
-Payee = collections.namedtuple(
-    "Payee", ["pid", "pay_range", "times", "pay_day_of_week"]
-)
 Transaction = collections.namedtuple(
     "Transaction", ["src", "dst", "amt", "time", "day_of_week", "is_fraud"]
 )
@@ -32,9 +29,11 @@ class Person:
     def __init__(self, pid: str) -> None:
         self.pid = pid
         self.n_payees = random.randint(*N_PAYEES)
-        self.pay_range: tuple[float, float] = (
-            round(random.uniform(0, 500), 2),
-            round(random.uniform(500, 1_000), 2),
+        self.pay_range: tuple[float, float] = sorted(
+            round(random.uniform(1, 1000), 2) for _ in range(2)
+        )
+        self.receive_range: tuple[float, float] = sorted(
+            round(random.uniform(1, 1000), 2) for _ in range(2)
         )
         times_cycler = itertools.cycle(range(1, 25))
         [next(times_cycler) for _ in range(random.randint(0, 23))]
@@ -42,9 +41,9 @@ class Person:
             [next(times_cycler) for _ in range(random.randint(4, 12))]
         )
         self.pay_day_of_week: tuple[int, ...] = tuple(
-            sorted(random.sample(range(1, 8), k=random.randint(1, 6)))
+            sorted(random.sample(range(1, 8), k=random.randint(1, 4)))
         )
-        self.payees: list[tuple] = []
+        self.payees: list[Person] = []
         self.is_fraudster: bool = False
 
     def transact(self) -> Transaction:
@@ -52,19 +51,26 @@ class Person:
         return Transaction(
             src=self.pid,
             dst=payee.pid,
-            amt=round(random.uniform(payee.pay_range[0], payee.pay_range[1]), 2),
-            time=random.choice(payee.times),
-            day_of_week=random.choice(payee.pay_day_of_week),
+            amt=round(
+                random.uniform(
+                    max(self.pay_range[0], payee.receive_range[0]),
+                    min(self.pay_range[1], payee.receive_range[1]),
+                ),
+                2,
+            ),
+            time=random.choice(self.time_range),
+            day_of_week=random.choice(self.pay_day_of_week),
             is_fraud=False,
         )
 
     def __repr__(self) -> str:
         return f""" -- {self.pid} -- 
 PAY RANGE: {self.pay_range[0]} - {self.pay_range[1]}
+RECEIVE RANGE: {self.receive_range[0]} - {self.receive_range[1]}
 PAY TIMES: {self.time_range}
 PAY DAY OF WEEK: {self.pay_day_of_week}
 IS FRAUDSTER: {self.is_fraudster}
-PAYEES: {[p for p in self.payees]}
+PAYEES: {[p.pid for p in self.payees]}
     """
 
 
@@ -73,30 +79,18 @@ all_people: list[Person] = [Person(pid=f"p{idx}") for idx in range(1, N_PEOPLE +
 for person_idx, person in enumerate(all_people):
     if person_idx in FRAUDSTER_IND:
         person.is_fraudster = True
-    payees: list[Person] = random.sample(all_people, k=person.n_payees)
-    for payee in payees:
-        person.payees.append(
-            Payee(
-                pid=payee.pid,
-                pay_range=sorted(
-                    [
-                        round(
-                            random.uniform(person.pay_range[0], person.pay_range[1]), 2
-                        )
-                        for _ in range(2)
-                    ]
-                ),
-                times=sorted(
-                    random.sample(
-                        person.time_range, k=random.randint(1, len(person.time_range))
-                    )
-                ),
-                pay_day_of_week=random.sample(
-                    person.pay_day_of_week,
-                    k=random.randint(1, len(person.pay_day_of_week)),
-                ),
+    while len(person.payees) < person.n_payees:
+        candidate = random.choice(all_people)
+        if (
+            candidate != person
+            and candidate not in person.payees
+            and (
+                min(person.pay_range[1], candidate.receive_range[1])
+                - max(person.pay_range[0], candidate.receive_range[0])
             )
-        )
+            > 0
+        ):
+            person.payees.append(candidate)
 
 with open(SIM_DATA_OUTPUT_PATH, mode="w", encoding="utf-8") as file:
     csv_writer = csv.DictWriter(
