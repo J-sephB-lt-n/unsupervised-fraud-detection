@@ -12,7 +12,7 @@ from typing import Final
 import duckdb
 
 INPUT_DATA_FILEPATH: Final[str] = "data/input/simdata.csv"
-OUTPUT_DATA_FILEPATH: Final[str] = "data/output/train_data.csv"
+OUTPUT_DATA_FILEPATH: Final[str] = "feature_eng/output/train_data.csv"
 
 # set up python logger #
 logging.basicConfig(

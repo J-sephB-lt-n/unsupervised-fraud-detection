@@ -11,4 +11,9 @@ Create model training dataset:
 $ poetry run python -m feature_eng.create_train_data
 ```
 
+Run unsupervised anomaly detection models:
+```bash
+$ poetry run python -m models.isolation_forest
+```
+
 
