@@ -11,11 +11,11 @@ import itertools
 import random
 from typing import Final
 
-N_PEOPLE: Final[int] = 1_000
-N_FRAUDSTERS: Final[int] = 10
+N_PEOPLE: Final[int] = 10_000
+N_FRAUDSTERS: Final[int] = 100
 N_PAYEES: Final[tuple[int, int]] = (1, 10)
-N_NON_FRAUD_TRANSACTIONS: Final[int] = 10_000
-N_FRAUD_TRANSACTIONS: Final[int] = 100
+N_NON_FRAUD_TRANSACTIONS: Final[int] = 100_000
+N_FRAUD_TRANSACTIONS: Final[int] = 1_000
 SIM_DATA_OUTPUT_PATH: Final[str] = "data/input/simdata.csv"
 
 FRAUDSTER_IND: Final[set[int]] = set(random.sample(range(N_PEOPLE), k=N_FRAUDSTERS))
@@ -145,3 +145,5 @@ with open(SIM_DATA_OUTPUT_PATH, mode="w", encoding="utf-8") as file:
                 "is_fraud": True,
             }
         )
+
+print(f"Simulated dataset written to '{SIM_DATA_OUTPUT_PATH}'")

@@ -11,8 +11,6 @@ from typing import Final
 
 import duckdb
 
-import feature_eng
-
 INPUT_DATA_FILEPATH: Final[str] = "data/input/simdata.csv"
 OUTPUT_DATA_FILEPATH: Final[str] = "data/output/train_data.csv"
 
@@ -104,6 +102,10 @@ with duckdb.connect() as con:
     ;
     """
     )
+    logger.info("Completed dataset creation - starting export to %s", OUTPUT_DATA_FILEPATH)
+    con.execute(f"COPY fraud.aug_train_data TO '{OUTPUT_DATA_FILEPATH}' (HEADER, DELIMITER ',');")
+    logger.info("Finished exporting data to %s", OUTPUT_DATA_FILEPATH)
+    print("Here is a random sample of the exported data:")
     rel = con.sql(
         """
     SELECT  * 
@@ -113,7 +115,3 @@ with duckdb.connect() as con:
             """
     )
     rel.show()
-    # for row in con.fetchall():
-    #     print(row)
-
-# print(feature_eng.SQL_QUERY_PERSON_CUM_PROP_TRANSACTIONS_THIS_TIME_OF_DAY)
