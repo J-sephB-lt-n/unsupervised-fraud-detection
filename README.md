@@ -14,6 +14,7 @@ $ poetry run python -m feature_eng.create_train_data
 Run unsupervised anomaly detection models:
 ```bash
 $ poetry run python -m models.isolation_forest
+$ poetry run python -m models.dist_to_src_clust_median
 ```
 
 Evaluate models:
