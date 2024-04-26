@@ -20,47 +20,35 @@ pred_df = pd.read_csv(
 )
 pred_df["is_fraud"] = pred_df["is_fraud"].astype(int)
 
-isolation_forest_df = pd.read_csv("models/predictions/isolation_forest.csv")
-isolation_forest_df["anomaly_score_rank"] = isolation_forest_df["anomaly_score"].rank()
-isolation_forest_df = isolation_forest_df.rename(
-    columns={
-        "anomaly_score": "isolation_forest",
-        "anomaly_score_rank": "isolation_forest_rank",
-    }
-)
-dist_to_src_clust_median_df = pd.read_csv(
-    "models/predictions/dist_to_src_clust_median.csv"
-)
-dist_to_src_clust_median_df["anomaly_score_rank"] = dist_to_src_clust_median_df[
-    "anomaly_score"
-].rank()
-dist_to_src_clust_median_df = dist_to_src_clust_median_df.rename(
-    columns={
-        "anomaly_score": "dist_to_src_clust_median",
-        "anomaly_score_rank": "dist_to_src_clust_median_rank",
-    }
-)
-pred_df = pred_df.merge(
-    isolation_forest_df[["tid", "isolation_forest", "isolation_forest_rank"]],
-    how="left",
-    on="tid",
-)
-pred_df = pred_df.merge(
-    dist_to_src_clust_median_df[
-        ["tid", "dist_to_src_clust_median", "dist_to_src_clust_median_rank"]
-    ],
-    how="left",
-    on="tid",
-)
-pred_df["ensemble_all_models_agg_avg"] = (
-    0.5 * pred_df["isolation_forest_rank"]
-    + 0.5 * pred_df["dist_to_src_clust_median_rank"]
-)
-for model_name in (
-    "isolation_forest",
+model_names: tuple[str, ...] = (
     "dist_to_src_clust_median",
-    "ensemble_all_models_agg_avg",
-):
+    "isolation_forest",
+    "local_outlier_factor",
+)
+model_preds: dict[str, pd.DataFrame] = {}
+for model_name in model_names:
+    model_preds[model_name] = pd.read_csv(f"models/predictions/{model_name}.csv")
+    model_preds[model_name]["anomaly_score_rank"] = model_preds[model_name][
+        "anomaly_score"
+    ].rank()
+    model_preds[model_name] = model_preds[model_name].rename(
+        columns={
+            "anomaly_score": model_name,
+            "anomaly_score_rank": f"{model_name}_rank",
+        }
+    )
+    pred_df = pred_df.merge(
+        model_preds[model_name][["tid", model_name, f"{model_name}_rank"]],
+        how="left",
+        on="tid",
+        validate="1:1",
+    )
+
+pred_df["ensemble_all_models_agg_avg"] = pred_df[
+    [col for col in pred_df if col[-5:] == "_rank"]
+].mean(axis=1)
+
+for model_name in list(model_names) + ["ensemble_all_models_agg_avg"]:
     fpr, tpr, thresholds = roc_curve(pred_df["is_fraud"], pred_df[[model_name]])
     auc = roc_auc_score(pred_df["is_fraud"], pred_df[[model_name]])
     plt.plot(fpr, tpr, label="%s ROC (area = %0.2f)" % (model_name, auc))
