@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-logger.info("reading input data from %s", INPUT_DATA_FILEPATH)
+logger.info("reading input data from '%s'", INPUT_DATA_FILEPATH)
 
 with duckdb.connect() as con:
     con.execute("CREATE SCHEMA fraud;")
@@ -185,7 +185,7 @@ with duckdb.connect() as con:
     con.execute(
         f"COPY fraud.aug_train_data TO '{OUTPUT_DATA_FILEPATH}' (HEADER, DELIMITER ',');"
     )
-    logger.info("Finished exporting data to %s", OUTPUT_DATA_FILEPATH)
+    logger.info("Finished exporting data to '%s'", OUTPUT_DATA_FILEPATH)
     print("Here is a random sample of the exported data:")
     rel = con.sql(
         """
