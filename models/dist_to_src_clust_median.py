@@ -61,7 +61,7 @@ for src in tqdm.tqdm(unique_src):
 
 train_pred = pd.concat(rows_list, axis=0)
 assert train_pred.shape[0] == train_X.shape[0]
-train_pred["model"] = "dist_to_source_clust_median"
+train_pred["model"] = "dist_to_src_clust_median"
 train_pred = train_pred.reset_index(level=["tid"])
 train_pred = train_pred[["tid","model","anomaly_score"]]
 train_pred.to_csv(PRED_OUTPUT_PATH, index=False)

@@ -54,7 +54,10 @@ with duckdb.connect() as con:
     CREATE TABLE fraud.aug_train_data
     AS 
     SELECT      trn.*
+
             ,   src.n_transactions AS src_n_transactions
+            ,   dst.n_transactions AS dst_n_transactions
+    
             ,   src.min_amt AS src_min_amt
             ,   src.mean_amt AS src_mean_amt
             ,   src.median_amt AS src_median_amt
@@ -63,7 +66,7 @@ with duckdb.connect() as con:
             ,   trn.amt / src.mean_amt AS src_ratio_to_mean_amt
             ,   trn.amt / src.median_amt AS src_ratio_to_median_amt
             ,   trn.amt / src.max_amt AS src_ratio_to_max_amt
-            ,   dst.n_transactions AS dst_n_transactions
+            
             ,   dst.min_amt AS dst_min_amt
             ,   dst.mean_amt AS dst_mean_amt
             ,   dst.median_amt AS dst_median_amt
@@ -72,12 +75,24 @@ with duckdb.connect() as con:
             ,   trn.amt / dst.mean_amt AS dst_ratio_to_mean_amt
             ,   trn.amt / dst.median_amt AS dst_ratio_to_median_amt
             ,   trn.amt / dst.max_amt AS dst_ratio_to_max_amt
+
             ,   sdw.src_n_transactions_this_day_of_week
             ,   sdw.src_n_transactions_this_day_of_week / src.n_transactions AS src_prop_transactions_this_day_of_week
+
+            ,   ddw.dst_n_transactions_this_day_of_week
+            ,   ddw.dst_n_transactions_this_day_of_week / dst.n_transactions AS dst_prop_transactions_this_day_of_week
+
             ,   stm.src_n_transactions_this_time
             ,   stm.src_n_transactions_this_time / src.n_transactions AS src_prop_transactions_this_time
+
+            ,   dtm.dst_n_transactions_this_time
+            ,   dtm.dst_n_transactions_this_time / dst.n_transactions AS dst_prop_transactions_this_time
+
             ,   sdt.src_n_transactions_this_dst
             ,   sdt.src_n_transactions_this_dst / src.n_transactions AS src_prop_transactions_this_dst
+
+            ,   dsr.dst_n_transactions_this_src
+            ,   dsr.dst_n_transactions_this_src / dst.n_transactions AS dst_prop_transactions_this_src
     FROM        fraud.train_data trn
     LEFT JOIN   (
                 SELECT      src
@@ -112,6 +127,16 @@ with duckdb.connect() as con:
             ON  trn.src = sdw.src
             AND trn.day_of_week = sdw.day_of_week
     LEFT JOIN   (
+                SELECT      dst
+                        ,   day_of_week
+                        ,   COUNT(*) AS dst_n_transactions_this_day_of_week
+                FROM        fraud.train_data
+                GROUP BY    dst
+                        ,   day_of_week
+                ) ddw
+            ON  trn.dst = ddw.dst
+            AND trn.day_of_week = ddw.day_of_week
+    LEFT JOIN   (
                 SELECT      src
                         ,   time
                         ,   COUNT(*) AS src_n_transactions_this_time
@@ -122,6 +147,16 @@ with duckdb.connect() as con:
             ON  trn.src = stm.src
             AND trn.time = stm.time
     LEFT JOIN   (
+                SELECT      dst
+                        ,   time
+                        ,   COUNT(*) AS dst_n_transactions_this_time
+                FROM        fraud.train_data
+                GROUP BY    dst
+                        ,   time
+                ) dtm
+            ON  trn.dst = dtm.dst
+            AND trn.time = dtm.time
+    LEFT JOIN   (
                 SELECT      src
                         ,   dst
                         ,   COUNT(*) AS src_n_transactions_this_dst
@@ -131,11 +166,25 @@ with duckdb.connect() as con:
                 ) sdt
             ON  trn.src = sdt.src
             AND trn.dst = sdt.dst
+    LEFT JOIN   (
+                SELECT      dst
+                        ,   src
+                        ,   COUNT(*) AS dst_n_transactions_this_src
+                FROM        fraud.train_data
+                GROUP BY    dst
+                        ,   src
+                ) dsr
+            ON  trn.dst = dsr.dst
+            AND trn.src = dsr.src
     ;
     """
     )
-    logger.info("Completed dataset creation - starting export to %s", OUTPUT_DATA_FILEPATH)
-    con.execute(f"COPY fraud.aug_train_data TO '{OUTPUT_DATA_FILEPATH}' (HEADER, DELIMITER ',');")
+    logger.info(
+        "Completed dataset creation - starting export to %s", OUTPUT_DATA_FILEPATH
+    )
+    con.execute(
+        f"COPY fraud.aug_train_data TO '{OUTPUT_DATA_FILEPATH}' (HEADER, DELIMITER ',');"
+    )
     logger.info("Finished exporting data to %s", OUTPUT_DATA_FILEPATH)
     print("Here is a random sample of the exported data:")
     rel = con.sql(

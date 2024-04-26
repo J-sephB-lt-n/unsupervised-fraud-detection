@@ -21,6 +21,7 @@ pred_df = pd.read_csv(
 pred_df["is_fraud"] = pred_df["is_fraud"].astype(int)
 
 model_names: tuple[str, ...] = (
+    "dist_to_dst_clust_median",
     "dist_to_src_clust_median",
     "isolation_forest",
     "local_outlier_factor",
@@ -44,11 +45,17 @@ for model_name in model_names:
         validate="1:1",
     )
 
-pred_df["ensemble_all_models_agg_avg"] = pred_df[
-    [col for col in pred_df if col[-5:] == "_rank"]
-].mean(axis=1)
+model_names_in_ensemble: list[str] = [
+    model_name
+    for model_name in pred_df
+    if model_name[-5:] == "_rank" and "dist_to_dst_clust_median" not in model_name
+]
+pred_df["ensemble_agg_avg"] = pred_df[model_names_in_ensemble].mean(axis=1)
+print("Ensemble contains the following models:")
+for model_name in model_names_in_ensemble:
+    print("\t-", model_name.replace("_rank",""))
 
-for model_name in list(model_names) + ["ensemble_all_models_agg_avg"]:
+for model_name in list(model_names) + ["ensemble_agg_avg"]:
     fpr, tpr, thresholds = roc_curve(pred_df["is_fraud"], pred_df[[model_name]])
     auc = roc_auc_score(pred_df["is_fraud"], pred_df[[model_name]])
     plt.plot(fpr, tpr, label="%s ROC (area = %0.2f)" % (model_name, auc))
