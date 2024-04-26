@@ -161,3 +161,6 @@ cython_debug/
 
 # Large files
 data/input/kaggle_alaxi_paysim1.csv
+
+# random temp files #
+.DS_Store

@@ -65,3 +65,5 @@ train_pred["model"] = "dist_to_src_clust_median"
 train_pred = train_pred.reset_index(level=["tid"])
 train_pred = train_pred[["tid","model","anomaly_score"]]
 train_pred.to_csv(PRED_OUTPUT_PATH, index=False)
+
+print(f"predictions written to {PRED_OUTPUT_PATH}")

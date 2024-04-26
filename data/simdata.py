@@ -11,7 +11,9 @@ import itertools
 import random
 from typing import Final
 
-N_PEOPLE: Final[int] = 5_000
+import tqdm
+
+N_PEOPLE: Final[int] = 10_000
 N_FRAUDSTERS: Final[int] = 50
 N_PAYEES: Final[tuple[int, int]] = (1, 10)
 N_NON_FRAUD_TRANSACTIONS: Final[int] = 100_000
@@ -30,20 +32,26 @@ class Person:
         self.pid = pid
         self.n_payees = random.randint(*N_PAYEES)
         self.pay_range: tuple[float, float] = sorted(
-            round(random.uniform(1, 1000), 2) for _ in range(2)
+            # person only makes payments within this range #
+            round(random.uniform(1, 1000), 2)
+            for _ in range(2)
         )
         self.receive_range: tuple[float, float] = sorted(
-            round(random.uniform(1, 1000), 2) for _ in range(2)
+            # person only receives payments within this range #
+            round(random.uniform(1, 1000), 2)
+            for _ in range(2)
         )
         times_cycler = itertools.cycle(range(1, 25))
         [next(times_cycler) for _ in range(random.randint(0, 23))]
         self.time_range: tuple[int, ...] = tuple(
+            # person only makes payments within this time range #
             [next(times_cycler) for _ in range(random.randint(4, 12))]
         )
         self.pay_day_of_week: tuple[int, ...] = tuple(
-            sorted(random.sample(range(1, 8), k=random.randint(1, 4)))
+            # person only makes payments on these days of the week #
+            sorted(random.sample(range(1, 8), k=random.randint(1, 7)))
         )
-        self.payees: list[Person] = []
+        self.payees: list[Person] = []  # person only makes payments to these people
         self.is_fraudster: bool = False
 
     def transact(self) -> Transaction:
@@ -109,7 +117,8 @@ with open(SIM_DATA_OUTPUT_PATH, mode="w", encoding="utf-8") as file:
         quoting=csv.QUOTE_MINIMAL,
     )
     csv_writer.writeheader()
-    for tid in range(1, N_NON_FRAUD_TRANSACTIONS + 1):
+    print("generating non-fraudulent transactions")
+    for tid in tqdm.tqdm(range(1, N_NON_FRAUD_TRANSACTIONS + 1)):
         person = random.choice(all_people)
         trn = person.transact()
         csv_writer.writerow(
@@ -123,9 +132,12 @@ with open(SIM_DATA_OUTPUT_PATH, mode="w", encoding="utf-8") as file:
                 "is_fraud": trn.is_fraud,
             }
         )
-    for tid in range(
-        N_NON_FRAUD_TRANSACTIONS + 1,
-        N_NON_FRAUD_TRANSACTIONS + 1 + N_FRAUD_TRANSACTIONS,
+    print("generating fraudulent transactions")
+    for tid in tqdm.tqdm(
+        range(
+            N_NON_FRAUD_TRANSACTIONS + 1,
+            N_NON_FRAUD_TRANSACTIONS + 1 + N_FRAUD_TRANSACTIONS,
+        )
     ):
         fraudster_idx = random.choice(list(FRAUDSTER_IND))
         csv_writer.writerow(

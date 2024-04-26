@@ -54,3 +54,4 @@ train_pred = pd.DataFrame(
     }
 )
 train_pred.to_csv(PRED_OUTPUT_PATH, index=False)
+print(f"predictions written to {PRED_OUTPUT_PATH}")
