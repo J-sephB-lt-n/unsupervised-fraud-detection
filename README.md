@@ -22,14 +22,8 @@ Run unsupervised anomaly detection models:
 ```bash
 $ poetry run python -m models.dist_to_dst_clust_median
 $ poetry run python -m models.dist_to_src_clust_median
-$ poetry run python -m models.local_outlier_factor
+$ poetry run python -m models.train_predict.local_outlier_factor
 $ poetry run python -m models.isolation_forest
-```
-```bash
-predictions written to 'models/predictions/dist_to_dst_clust_median.csv'
-predictions written to 'models/predictions/dist_to_src_clust_median.csv'
-predictions written to 'models/predictions/local_outlier_factor.csv'
-predictions written to 'models/predictions/isolation_forest.csv'
 ```
 
 Evaluate models:

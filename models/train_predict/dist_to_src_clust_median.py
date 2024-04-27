@@ -10,7 +10,6 @@ import pandas as pd
 import tqdm
 from sklearn.preprocessing import StandardScaler
 
-
 TRAIN_DATA_PATH: Final[str] = "feature_eng/output/train_data.csv"
 PRED_OUTPUT_PATH: Final[str] = "models/predictions/dist_to_src_clust_median.csv"
 

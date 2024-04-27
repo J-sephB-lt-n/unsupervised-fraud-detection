@@ -6,6 +6,7 @@ from typing import Final
 
 import pandas as pd
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.preprocessing import StandardScaler
 
 TRAIN_DATA_PATH: Final[str] = "feature_eng/output/train_data.csv"
 PRED_OUTPUT_PATH: Final[str] = "models/predictions/local_outlier_factor.csv"
@@ -42,7 +43,11 @@ train_X = data[
         "src_prop_transactions_this_dst",
     ]
 ]
-train_y = data[["is_fraud"]]
+train_X = train_X.astype("float64")
+# train_y = data[["is_fraud"]]
+
+standard_scaler = StandardScaler()
+train_X.loc[:, :] = standard_scaler.fit_transform(train_X)
 
 model = LocalOutlierFactor(n_neighbors=20, n_jobs=-1)
 _ = model.fit_predict(train_X)
