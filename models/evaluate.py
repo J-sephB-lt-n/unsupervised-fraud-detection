@@ -29,33 +29,27 @@ model_names: tuple[str, ...] = (
 model_preds: dict[str, pd.DataFrame] = {}
 for model_name in model_names:
     model_preds[model_name] = pd.read_csv(f"models/predictions/{model_name}.csv")
-    model_preds[model_name]["anomaly_score_rank"] = model_preds[model_name][
-        "anomaly_score"
-    ].rank()
+    model_preds[model_name]["anomaly_score_neg_rank"] = -model_preds[model_name][
+        "anomaly_score_rank"
+    ]
     model_preds[model_name] = model_preds[model_name].rename(
         columns={
             "anomaly_score": model_name,
-            "anomaly_score_rank": f"{model_name}_rank",
+            "anomaly_score_neg_rank": f"{model_name}_neg_rank",
         }
     )
     pred_df = pred_df.merge(
-        model_preds[model_name][["tid", model_name, f"{model_name}_rank"]],
+        model_preds[model_name][["tid", model_name, f"{model_name}_neg_rank"]],
         how="left",
         on="tid",
         validate="1:1",
     )
 
-model_names_in_ensemble: list[str] = [
-    model_name
-    for model_name in pred_df
-    if model_name[-5:] == "_rank" and "dist_to_dst_clust_median" not in model_name
-]
-pred_df["ensemble_agg_avg"] = pred_df[model_names_in_ensemble].mean(axis=1)
-print("Ensemble contains the following models:")
-for model_name in model_names_in_ensemble:
-    print("\t-", model_name.replace("_rank",""))
+pred_df["ensemble_agg_avg"] = pred_df[[f"{nm}_neg_rank" for nm in model_names]].mean(
+    axis=1
+)
 
-plt.figure(figsize=(10,8))
+plt.figure(figsize=(10, 8))
 for model_name in list(model_names) + ["ensemble_agg_avg"]:
     fpr, tpr, thresholds = roc_curve(pred_df["is_fraud"], pred_df[[model_name]])
     auc = roc_auc_score(pred_df["is_fraud"], pred_df[[model_name]])
@@ -68,6 +62,6 @@ plt.ylabel("True Positive Rate (Sensitivity)")
 plt.suptitle("Unsupervised Anomaly Detection")
 plt.title("Receiver Operating Characteristic")
 plt.legend(title="Model")
-#plt.show()
+# plt.show()
 plt.savefig("models/evaluation_output/roc_auc.png")
 print("Exported results to models/evaluation_output/")

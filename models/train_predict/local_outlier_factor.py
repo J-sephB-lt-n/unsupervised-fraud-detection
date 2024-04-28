@@ -58,5 +58,6 @@ train_pred = pd.DataFrame(
         "anomaly_score": -model.negative_outlier_factor_,
     }
 )
+train_pred["anomaly_score_rank"] = train_pred["anomaly_score"].rank(ascending=False)
 train_pred.to_csv(PRED_OUTPUT_PATH, index=False)
 print(f"predictions written to '{PRED_OUTPUT_PATH}'")

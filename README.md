@@ -20,18 +20,19 @@ Finished exporting data to 'feature_eng/output/train_data.csv'
 
 Run unsupervised anomaly detection models:
 ```bash
-$ poetry run python -m models.dist_to_dst_clust_median
-$ poetry run python -m models.dist_to_src_clust_median
+$ poetry run python -m models.train_predict.dist_to_dst_clust_median
+$ poetry run python -m models.train_predict.dist_to_src_clust_median
 $ poetry run python -m models.train_predict.local_outlier_factor
-$ poetry run python -m models.isolation_forest
+$ poetry run python -m models.train_predict.isolation_forest
 ```
 
 Evaluate models:
 ```bash
 $ poetry run python -m models.evaluate
-Ensemble contains the following models:
-        - dist_to_src_clust_median
-        - isolation_forest
-        - local_outlier_factor
 Exported results to 'models/evaluation_output/'
+```
+
+Explain predictions for a specific transaction:
+```bash
+$ poetry run python -m models.explain_prediction --tid 100420
 ```
